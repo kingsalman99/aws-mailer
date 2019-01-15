@@ -1,0 +1,13 @@
+__SUBJECT
+Test
+__SUBJECT
+
+__BODY_TEXT
+This is the body
+__BODY_TEXT
+
+__BODY_HTML
+<html>
+<body>
+</html>
+__BODY_HTML

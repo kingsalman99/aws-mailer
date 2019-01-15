@@ -28,4 +28,7 @@ want to restart sending operation and do not want to sent duplicate emails to
 addresses that had one email already.
 
 `awsmailer.log` log (this only grows, i.e. you probably want to delete it or
-  archive it after a while).  
+  archive it after a while).
+
+## Execute Tests:
+`python3 -m unittest tests/tests_*`

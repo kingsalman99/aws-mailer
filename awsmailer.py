@@ -109,15 +109,15 @@ def read_parse_msg(path):
             "".join(msg['__BODY_HTML']) )
 
 
-def read_already_notified(notified_fpath):
+def read_already_notified(notified_fpath, logger):
     """
     Reads list of already notified addresses and adds them in a dictionary.
     """
     notified = {}
-    if os.path.isfile(NOTIFIED_FILE):
+    if os.path.isfile(notified_fpath):
         logger.info('Loading already notified recipients.')
         count = 0
-        with open(NOTIFIED_FILE) as fh:
+        with open(notified_fpath) as fh:
             for line in fh:
                 count += 1
                 notified[line.strip().lower()] = 1
@@ -238,6 +238,7 @@ def should_skip(recipient, notified):
         return True
     return False
 
+
 if __name__ == "__main__":
     logger = get_a_logger()
     logger.info('>> Sending batch emails with message:')
@@ -245,7 +246,7 @@ if __name__ == "__main__":
     logger.info('Message Subject: %s' % subject)
     logger.info('Message Text: %s' % body_txt)
     logger.info('Message HTML: %s' % body_html)
-    notified = read_already_notified(NOTIFIED_FILE)
+    notified = read_already_notified(NOTIFIED_FILE, logger)
     all_recipients_list = read_recipients_lists(RECIPIENTS_DIR)
 
     mail_count = 0
