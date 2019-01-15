@@ -45,21 +45,6 @@ PASSWORD_SMTP = os.environ['PASSWORD_SMTP']
 HOST = "email-smtp.us-east-1.amazonaws.com"
 PORT = 587
 
-class SMTP_Server:
-    class __SMTP_Server:
-        def __init__(self):
-            self.val = arg
-        def __str__(self):
-            return repr(self) + self.val
-    instance = None
-    def __init__(self, arg):
-        if not OnlyOne.instance:
-            OnlyOne.instance = OnlyOne.__OnlyOne(arg)
-        else:
-            OnlyOne.instance.val = arg
-    def __getattr__(self, name):
-        return getattr(self.instance, name)
-
 
 def get_a_logger():
     """
@@ -253,32 +238,32 @@ def should_skip(recipient, notified):
         return True
     return False
 
+if __name__ == "__main__":
+    logger = get_a_logger()
+    logger.info('>> Sending batch emails with message:')
+    (subject, body_txt, body_html) = read_parse_msg(MSG_FILE)
+    logger.info('Message Subject: %s' % subject)
+    logger.info('Message Text: %s' % body_txt)
+    logger.info('Message HTML: %s' % body_html)
+    notified = read_already_notified(NOTIFIED_FILE)
+    all_recipients_list = read_recipients_lists(RECIPIENTS_DIR)
 
-logger = get_a_logger()
-logger.info('>> Sending batch emails with message:')
-(subject, body_txt, body_html) = read_parse_msg(MSG_FILE)
-logger.info('Message Subject: %s' % subject)
-logger.info('Message Text: %s' % body_txt)
-logger.info('Message HTML: %s' % body_html)
-notified = read_already_notified(NOTIFIED_FILE)
-all_recipients_list = read_recipients_lists(RECIPIENTS_DIR)
-
-mail_count = 0
-total_count = 0
-recipients_batch = []
-start_time = time.time()
-for rec in all_recipients_list:
-    total_count += 1
-    recipient = rec.strip().lower()
-    if not should_skip(recipient, notified):
-        recipients_batch.append(recipient)
-    if len(recipients_batch) == MAX_RECS_PER_BATCH or total_count == len(all_recipients_list):
-        msg = create_smtp_msg(subject, SENDERNAME, SENDER, recipients_batch,
-                              body_txt, body_html)
-        mail_count += batch_send(SENDER, recipients_batch, msg, notified)
-        recipients_batch.clear()
-        elapsed_time = time.time() - start_time
-        logger.info('Sent %s mails in %s mins' % (mail_count, round(elapsed_time/60,2)))
-        # Throttle down
-        time.sleep(COOL_DOWN)
-SMTP_SERVER.close()
+    mail_count = 0
+    total_count = 0
+    recipients_batch = []
+    start_time = time.time()
+    for rec in all_recipients_list:
+        total_count += 1
+        recipient = rec.strip().lower()
+        if not should_skip(recipient, notified):
+            recipients_batch.append(recipient)
+        if len(recipients_batch) == MAX_RECS_PER_BATCH or total_count == len(all_recipients_list):
+            msg = create_smtp_msg(subject, SENDERNAME, SENDER, recipients_batch,
+                                  body_txt, body_html)
+            mail_count += batch_send(SENDER, recipients_batch, msg, notified)
+            recipients_batch.clear()
+            elapsed_time = time.time() - start_time
+            logger.info('Sent %s mails in %s mins' % (mail_count, round(elapsed_time/60,2)))
+            # Throttle down
+            time.sleep(COOL_DOWN)
+    SMTP_SERVER.close()
