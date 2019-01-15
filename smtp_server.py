@@ -13,7 +13,7 @@ class SMTPServer:
     server = None
     last_timestamp = time.time()
 
-    def _refresh_smtp_server(self):
+    def refresh_smtp_server(self):
         """
         Gets or refreshes a connection to an AWS SES SMTP server
         """
@@ -42,10 +42,10 @@ class SMTPServer:
             sys.exit(0)
         if not self.server:
             cfg.log.info("No SMTP server connection. Getting one...")
-            self._refresh_smtp_server()
+            self.refresh_smtp_server()
         if time.time() - self.last_timestamp > cfg.SERVER_TTL:
             cfg.log.info("SMTP Server connection exceeded TTL (%s). Getting a new one..." % (time.time() - LAST_SERVER_TIMESTAMP))
-            self._refresh_smtp_server()
+            self.refresh_smtp_server()
         mail_count = 0
         retries = 0
         while True:
@@ -62,7 +62,7 @@ class SMTPServer:
                 retries += 1
                 time.sleep(retries * cfg.WAIT_ON_ERROR)
                 cfg.log.info('Retry %s' % retries)
-                self._refresh_smtp_server()
+                self.refresh_smtp_server()
                 if retries >= cfg.MAX_RETRIES:
                     cfg.log.error('Max retries reached. Aborting.')
                     self.server.close()
@@ -71,6 +71,9 @@ class SMTPServer:
             # break out of while if no exception
             break
         return mail_count
+
+    def set_retries(self, retries):
+        cfg.MAX_RETRIES = retries
 
     def close(self):
         if self.server:
