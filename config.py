@@ -1,4 +1,5 @@
 import os
+import logging
 
 # max recipients per batch
 MAX_RECS_PER_BATCH = 50
@@ -33,3 +34,16 @@ PASSWORD_SMTP = os.environ['PASSWORD_SMTP']
 # endpoint in the appropriate region.
 HOST = os.getenv('AWS_SMTP_HOST', "email-smtp.us-east-1.amazonaws.com")
 PORT = os.getenv('AWS_SMTP_PORT', 587)
+
+# set up a logger
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+fh = logging.FileHandler('awsmailer.log')
+fh.setLevel(logging.DEBUG)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+fh.setFormatter(formatter)
+ch.setFormatter(formatter)
+log.addHandler(fh)
+log.addHandler(ch)

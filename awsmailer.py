@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import smtplib
 import os
-import logging
 import re
 import sys
 import time
@@ -11,24 +10,7 @@ from email.mime.text import MIMEText
 from os import listdir
 from os.path import isfile, join
 import config as cfg
-
-
-def get_a_logger():
-    """
-    Returns a logger
-    """
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler('awsmailer.log')
-    fh.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fh.setFormatter(formatter)
-    ch.setFormatter(formatter)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-    return logger
+from smtp_server import SMTPServer
 
 
 def is_valid_email(email):
@@ -66,7 +48,7 @@ def read_parse_msg(path):
                     key = None
                 # else input is malformed - abort
                 else:
-                    logger.error('Malformed message on line: %s' % count)
+                    cfg.log.error('Malformed message on line: %s' % count)
             # normal input
             else:
                 if key is not None:
@@ -76,19 +58,19 @@ def read_parse_msg(path):
             "".join(msg['__BODY_HTML']) )
 
 
-def read_already_notified(notified_fpath, logger):
+def read_already_notified(notified_fpath):
     """
     Reads list of already notified addresses and adds them in a dictionary.
     """
     notified = {}
     if os.path.isfile(notified_fpath):
-        logger.info('Loading already notified recipients.')
+        cfg.log.info('Loading already notified recipients.')
         count = 0
         with open(notified_fpath) as fh:
             for line in fh:
                 count += 1
                 notified[line.strip().lower()] = 1
-        logger.info('Loaded %s notified recipients.' % count)
+        cfg.log.info('Loaded %s notified recipients.' % count)
     return notified
 
 
@@ -103,32 +85,9 @@ def read_recipients_lists(dirpath):
         with open(join(dirpath, f)) as fh:
             for line in fh:
                 recipients_list.append(line.strip())
-    logger.info('Loaded %s recipients from %s lists' % (len(recipients_list),
+    cfg.log.info('Loaded %s recipients from %s lists' % (len(recipients_list),
                                                         len(files)))
     return recipients_list
-
-SMTP_SERVER = None
-LAST_SERVER_TIMESTAMP = time.time()
-def refresh_smtp_server():
-    """
-    Gets or refreshes a connection to an AWS SES SMTP server
-    """
-    global LAST_SERVER_TIMESTAMP
-    global SMTP_SERVER
-    try:
-        SMTP_SERVER = smtplib.SMTP(cfg.HOST, cfg.PORT)
-        SMTP_SERVER.ehlo()
-        SMTP_SERVER.starttls()
-        #stmplib docs recommend calling ehlo() before & after starttls()
-        SMTP_SERVER.ehlo()
-        SMTP_SERVER.login(cfg.USERNAME_SMTP, cfg.PASSWORD_SMTP)
-        logger.info("Logged in SMTP server %s" % cfg.HOST)
-    except Exception as e:
-        logger.error(e)
-        SMTP_SERVER.close()
-        sys.exit(2)
-    LAST_SERVER_TIMESTAMP = time.time()
-    logger.info('New smtp server connection created. TS: %s' % LAST_SERVER_TIMESTAMP)
 
 
 def create_smtp_msg(subject, sendername, sender, recipient_list,
@@ -154,67 +113,27 @@ def create_smtp_msg(subject, sendername, sender, recipient_list,
     return msg
 
 
-def batch_send(sender, recipients_batch, msg, notified):
-    """
-    Sends an smtp msg as a blind copy (bcc) to a list of recipients
-    """
-    if len(recipients_batch) == 0:
-        logger.info("No recipients. Exiting")
-        sys.exit(0)
-    if not SMTP_SERVER:
-        logger.info("No SMTP server connection. Getting one...")
-        refresh_smtp_server()
-    if time.time() - LAST_SERVER_TIMESTAMP > cfg.SERVER_TTL:
-        logger.info("SMTP Server connection exceeded TTL (%s). Getting a new one..." % (time.time() - LAST_SERVER_TIMESTAMP))
-        refresh_smtp_server()
-    mail_count = 0
-    retries = 0
-    while True:
-        try:
-            SMTP_SERVER.sendmail(sender, recipients_batch, msg.as_string())
-            for recipient in recipients_batch:
-                logger.info("%s done" % recipient)
-                with open(cfg.NOTIFIED_FILE, "a") as fh:
-                    fh.write("%s\n" % recipient)
-                    notified[recipient] = 1
-                    mail_count += 1
-        except Exception as e:
-            logger.error(e)
-            retries += 1
-            time.sleep(retries * cfg.WAIT_ON_ERROR)
-            logger.info('Retry %s' % retries)
-            refresh_smtp_server()
-            if retries >= cfg.MAX_RETRIES:
-                logger.error('Max retries reached. Aborting.')
-                SMTP_SERVER.close()
-                sys.exit(1)
-            continue
-        # break out of while if no exception
-        break
-    return mail_count
-
-
 def should_skip(recipient, notified):
     """
     Should recipient be skipped?
     """
     if not is_valid_email(recipient):
-        logger.info('Ignoring %s (malformed email)' % recipient)
+        cfg.log.info('Ignoring %s (malformed email)' % recipient)
         return True
     if recipient in notified:
-        logger.info('Ignoring %s (already in notified list)' % recipient)
+        cfg.log.info('Ignoring %s (already in notified list)' % recipient)
         return True
     return False
 
 
 if __name__ == "__main__":
-    logger = get_a_logger()
-    logger.info('>> Sending batch emails with message:')
+    server = SMTPServer()
+    cfg.log.info('>> Sending batch emails with message:')
     (subject, body_txt, body_html) = read_parse_msg(cfg.MSG_FILE)
-    logger.info('Message Subject: %s' % subject)
-    logger.info('Message Text: %s' % body_txt)
-    logger.info('Message HTML: %s' % body_html)
-    notified = read_already_notified(cfg.NOTIFIED_FILE, logger)
+    cfg.log.info('Message Subject: %s' % subject)
+    cfg.log.info('Message Text: %s' % body_txt)
+    cfg.log.info('Message HTML: %s' % body_html)
+    notified = read_already_notified(cfg.NOTIFIED_FILE)
     all_recipients_list = read_recipients_lists(cfg.RECIPIENTS_DIR)
 
     mail_count = 0
@@ -229,10 +148,10 @@ if __name__ == "__main__":
         if len(recipients_batch) == cfg.MAX_RECS_PER_BATCH or total_count == len(all_recipients_list):
             msg = create_smtp_msg(subject, cfg.SENDERNAME, cfg.SENDER, recipients_batch,
                                   body_txt, body_html)
-            mail_count += batch_send(cfg.SENDER, recipients_batch, msg, notified)
+            mail_count += server.batch_send(cfg.SENDER, recipients_batch, msg, notified)
             recipients_batch.clear()
             elapsed_time = time.time() - start_time
-            logger.info('Sent %s mails in %s mins' % (mail_count, round(elapsed_time/60,2)))
+            cfg.log.info('Sent %s mails in %s mins' % (mail_count, round(elapsed_time/60,2)))
             # Throttle down
             time.sleep(cfg.COOL_DOWN)
-    SMTP_SERVER.close()
+    server.close()
