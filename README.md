@@ -10,6 +10,8 @@ export SENDER_SMTP=sender_email@sender_domain.com
 export SENDERNAME_SMTP=sender_name
 export USERNAME_SMTP=your_AWS_SES_ACCOUNT_USERNAME
 export PASSWORD_SMTP=your_AWS_SES_ACCOUNT_PASSWORD
+export AWS_SMTP_HOST=AWS_SMTP_HOST_eg_email-smtp.us-east-1.amazonaws.com
+export AWS_SMTP_PORT=AWS_SMTP_PORT_eg_587
 ```
 
 ## Setup:

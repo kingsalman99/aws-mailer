@@ -10,40 +10,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from os import listdir
 from os.path import isfile, join
-
-MAX_RECS_PER_BATCH = 50
-# secsß
-COOL_DOWN = 2
-WAIT_ON_ERROR = 5
-MAX_RETRIES = 5
-# refresh smtp server connection after 10 mins
-SERVER_TTL = 10 * 60.0
-SMTP_SERVER = None
-# persist notified users here - do not delete this file
-NOTIFIED_FILE = 'notified.flatdb'
-# implicit input - files with lists of who is to be notified should live in this dir
-RECIPIENTS_DIR = 'contacts'
-# what is to be mailed - see example_message.txt for an example/layout
-MSG_FILE = 'message.txt'
-
-LAST_SERVER_TIMESTAMP = time.time()
-# This address must be verified in AWS SES
-SENDER = os.environ['SENDER_SMTP']
-SENDERNAME = os.environ['SENDERNAME_SMTP']
-# Replace smtp_username with your Amazon SES SMTP user name.
-USERNAME_SMTP = os.environ['USERNAME_SMTP']
-# Replace smtp_password with your Amazon SES SMTP password.
-PASSWORD_SMTP = os.environ['PASSWORD_SMTP']
-# (Optional) the name of a configuration set to use for this message.
-# If you comment out this line, you also need to remove or comment out
-# the "X-SES-CONFIGURATION-SET:" header below.
-#CONFIGURATION_SET = "ConfigSet"
-
-# If you're using Amazon SES in an AWS Region other than US West (Oregon),
-# replace email-smtp.us-west-2.amazonaws.com with the Amazon SES SMTP
-# endpoint in the appropriate region.
-HOST = "email-smtp.us-east-1.amazonaws.com"
-PORT = 587
+import config as cfg
 
 
 def get_a_logger():
@@ -140,7 +107,8 @@ def read_recipients_lists(dirpath):
                                                         len(files)))
     return recipients_list
 
-
+SMTP_SERVER = None
+LAST_SERVER_TIMESTAMP = time.time()
 def refresh_smtp_server():
     """
     Gets or refreshes a connection to an AWS SES SMTP server
@@ -148,13 +116,13 @@ def refresh_smtp_server():
     global LAST_SERVER_TIMESTAMP
     global SMTP_SERVER
     try:
-        SMTP_SERVER = smtplib.SMTP(HOST, PORT)
+        SMTP_SERVER = smtplib.SMTP(cfg.HOST, cfg.PORT)
         SMTP_SERVER.ehlo()
         SMTP_SERVER.starttls()
         #stmplib docs recommend calling ehlo() before & after starttls()
         SMTP_SERVER.ehlo()
-        SMTP_SERVER.login(USERNAME_SMTP, PASSWORD_SMTP)
-        logger.info("Logged in SMTP server %s" % HOST)
+        SMTP_SERVER.login(cfg.USERNAME_SMTP, cfg.PASSWORD_SMTP)
+        logger.info("Logged in SMTP server %s" % cfg.HOST)
     except Exception as e:
         logger.error(e)
         SMTP_SERVER.close()
@@ -196,7 +164,7 @@ def batch_send(sender, recipients_batch, msg, notified):
     if not SMTP_SERVER:
         logger.info("No SMTP server connection. Getting one...")
         refresh_smtp_server()
-    if time.time() - LAST_SERVER_TIMESTAMP > SERVER_TTL:
+    if time.time() - LAST_SERVER_TIMESTAMP > cfg.SERVER_TTL:
         logger.info("SMTP Server connection exceeded TTL (%s). Getting a new one..." % (time.time() - LAST_SERVER_TIMESTAMP))
         refresh_smtp_server()
     mail_count = 0
@@ -206,17 +174,17 @@ def batch_send(sender, recipients_batch, msg, notified):
             SMTP_SERVER.sendmail(sender, recipients_batch, msg.as_string())
             for recipient in recipients_batch:
                 logger.info("%s done" % recipient)
-                with open(NOTIFIED_FILE, "a") as fh:
+                with open(cfg.NOTIFIED_FILE, "a") as fh:
                     fh.write("%s\n" % recipient)
                     notified[recipient] = 1
                     mail_count += 1
         except Exception as e:
             logger.error(e)
             retries += 1
-            time.sleep(retries * WAIT_ON_ERROR)
+            time.sleep(retries * cfg.WAIT_ON_ERROR)
             logger.info('Retry %s' % retries)
             refresh_smtp_server()
-            if retries >= MAX_RETRIES:
+            if retries >= cfg.MAX_RETRIES:
                 logger.error('Max retries reached. Aborting.')
                 SMTP_SERVER.close()
                 sys.exit(1)
@@ -242,12 +210,12 @@ def should_skip(recipient, notified):
 if __name__ == "__main__":
     logger = get_a_logger()
     logger.info('>> Sending batch emails with message:')
-    (subject, body_txt, body_html) = read_parse_msg(MSG_FILE)
+    (subject, body_txt, body_html) = read_parse_msg(cfg.MSG_FILE)
     logger.info('Message Subject: %s' % subject)
     logger.info('Message Text: %s' % body_txt)
     logger.info('Message HTML: %s' % body_html)
-    notified = read_already_notified(NOTIFIED_FILE, logger)
-    all_recipients_list = read_recipients_lists(RECIPIENTS_DIR)
+    notified = read_already_notified(cfg.NOTIFIED_FILE, logger)
+    all_recipients_list = read_recipients_lists(cfg.RECIPIENTS_DIR)
 
     mail_count = 0
     total_count = 0
@@ -258,13 +226,13 @@ if __name__ == "__main__":
         recipient = rec.strip().lower()
         if not should_skip(recipient, notified):
             recipients_batch.append(recipient)
-        if len(recipients_batch) == MAX_RECS_PER_BATCH or total_count == len(all_recipients_list):
-            msg = create_smtp_msg(subject, SENDERNAME, SENDER, recipients_batch,
+        if len(recipients_batch) == cfg.MAX_RECS_PER_BATCH or total_count == len(all_recipients_list):
+            msg = create_smtp_msg(subject, cfg.SENDERNAME, cfg.SENDER, recipients_batch,
                                   body_txt, body_html)
-            mail_count += batch_send(SENDER, recipients_batch, msg, notified)
+            mail_count += batch_send(cfg.SENDER, recipients_batch, msg, notified)
             recipients_batch.clear()
             elapsed_time = time.time() - start_time
             logger.info('Sent %s mails in %s mins' % (mail_count, round(elapsed_time/60,2)))
             # Throttle down
-            time.sleep(COOL_DOWN)
+            time.sleep(cfg.COOL_DOWN)
     SMTP_SERVER.close()
