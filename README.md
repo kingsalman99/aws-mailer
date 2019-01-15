@@ -17,7 +17,7 @@ You need to have your recipients as new line separated lists inside directory
 `contacts` (there's an example list in the code already)
 
 Craft your message according to the example in `example_message.txt`. Paste the
-relevant sections in between the markers (`__SUBJECT`).
+relevant sections in between the markers (`__SUBJECT`, etc).
 
 ## Execution:
 `python3 awsmailer.py`
