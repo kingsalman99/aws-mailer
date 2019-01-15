@@ -76,7 +76,7 @@ def read_already_notified(notified_fpath):
 
 def read_recipients_lists(dirpath):
     """
-    Alls files inside the 'contacts' directory are read through.
+    All files inside the 'contacts' directory are read through.
     The files should contain lists of emails addresses separated by new lines.
     """
     recipients_list = []
