@@ -45,11 +45,11 @@ relevant sections (`__BODY_TEXT` and `__BODY_HTML` respectively).
 `python3 awsmailer.py`
 
 ## Outputs
-`notified.flatdb` a list of send emails (adresses). Leave that in place if you
+* `notified.flatdb`: a list of addresses where the message was sent. Leave that in place if you
 want to restart sending operation and do not want to sent duplicate emails to
 addresses that had one email already.
 
-`awsmailer.log` log (this only grows, i.e. you probably want to delete it or
+* `awsmailer.log`: log (this only grows, i.e. you probably want to delete it or
   archive it after a while).
 
 ## Execute Tests
