@@ -31,12 +31,15 @@ export AWS_SMTP_PORT=AWS_SMTP_PORT_eg_587
 message will be sent from) must be a SES registered user and domain. See AWS documentation
 above for details.
 
-### Recipients lists
+### Recipients Lists
 Have your recipients as new line separated lists inside directory
 `contacts` (there's an example list in the code already)
 
+### Message Format
 Craft your message according to the example in `example_message.txt`. Paste the
-relevant sections in between the markers (`__SUBJECT`, etc).
+relevant sections in between the markers (`__SUBJECT`, etc). At the moment the message
+supports 2 MIME parts, a simple text and an HTML. Enter both as plain text inside the
+relevant sections.
 
 ## Execution
 `python3 awsmailer.py`
