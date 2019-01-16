@@ -39,7 +39,7 @@ Have your recipients as new line separated lists inside directory
 Craft your message according to the example in `example_message.txt`. Paste the
 relevant sections in between the markers (`__SUBJECT`, etc). At the moment the message
 supports 2 MIME parts, a simple text and an HTML. Enter both as plain text inside the
-relevant sections.
+relevant sections (`__BODY_TEXT` and `__BODY_HTML` respectively).
 
 ## Execution
 `python3 awsmailer.py`
