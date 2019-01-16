@@ -1,5 +1,5 @@
 # aws-mailer
-A small python program that lets you send a mail to a list of recipients via AWS SES SMTP service.
+A small python program that lets you send a mail to a list of recipients via AWS Simple Email Service (SES).
 
 ## Info
 https://docs.aws.amazon.com/ses/latest/DeveloperGuide/Welcome.html
