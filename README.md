@@ -1,12 +1,12 @@
 # aws-mailer
 A small python program that lets you send a mail to a list of recipients via AWS SES SMTP service.
 
-## Info:
+## Info
 https://docs.aws.amazon.com/ses/latest/DeveloperGuide/Welcome.html
 
-## Features
-* Retries upon failure (see `config.py`) for relevant settings.
-* Periodic refresh of AWS SMTP Server connection to alleviate recycling of backend servers done by AWS.
+## Features/Notes
+* Retries upon failure (see `config.py` for relevant settings).
+* Periodic refresh of AWS SMTP Server connection to alleviate recycling of backend servers done by AWS (see `config.py` for relevant settings).
 * Bookkeeping to avoid resending the message to recipients that already got it once.
 * SES service imposes limits both on the rate and on the total number of emails you may send
 over a period. Limits vary on regular not-sandboxed users and are quite small for new (sandboxed) users.
@@ -14,7 +14,11 @@ over a period. Limits vary on regular not-sandboxed users and are quite small fo
 
 ## Setup
 
-### Environment Variables:
+### Operational Settings
+`config.py` carries several settings pertaining to retries and batch sizes.
+
+### Environment Variables
+You need to export next environmental variables:
 ```
 export SENDER_SMTP=sender_email@sender_domain.com
 export SENDERNAME_SMTP=sender_name
@@ -27,14 +31,14 @@ export AWS_SMTP_PORT=AWS_SMTP_PORT_eg_587
 message will be sent from must be a SES registered user and domain. See AWS documentation
 above for details.
 
-### Recipients lists:
+### Recipients lists
 Have your recipients as new line separated lists inside directory
 `contacts` (there's an example list in the code already)
 
 Craft your message according to the example in `example_message.txt`. Paste the
 relevant sections in between the markers (`__SUBJECT`, etc).
 
-## Execution:
+## Execution
 `python3 awsmailer.py`
 
 ## Outputs
@@ -45,5 +49,5 @@ addresses that had one email already.
 `awsmailer.log` log (this only grows, i.e. you probably want to delete it or
   archive it after a while).
 
-## Execute Tests:
+## Execute Tests
 `python3 -m unittest tests/tests_*`
