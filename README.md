@@ -28,7 +28,7 @@ export AWS_SMTP_HOST=AWS_SMTP_HOST_eg_email-smtp.us-east-1.amazonaws.com
 export AWS_SMTP_PORT=AWS_SMTP_PORT_eg_587
 ```
 `SENDER_SMTP` and `SENDERNAME_SMTP` (i.e. the user and his email address that the
-message will be sent from must be a SES registered user and domain. See AWS documentation
+message will be sent from) must be a SES registered user and domain. See AWS documentation
 above for details.
 
 ### Recipients lists
