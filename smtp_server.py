@@ -75,6 +75,9 @@ class SMTPServer:
     def set_retries(self, retries):
         cfg.MAX_RETRIES = retries
 
+    def set_retries_interval(self, interval):
+        cfg.WAIT_ON_ERROR = interval
+
     def close(self):
         if self.server:
             self.server.close()
