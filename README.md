@@ -1,5 +1,5 @@
 
-(https://travis-ci.org/zerogvt/aws-mailer.svg?branch=master)
+![Build Status](https://travis-ci.org/zerogvt/aws-mailer.svg?branch=master)
 
 # aws-mailer
 A small python program that lets you send a mail to a list of recipients via AWS Simple Email Service (SES).
